@@ -145,6 +145,19 @@ and prompts for nothing.
 `crew add` hands the member the same front door, so the member dials port 443 too. A bare name
 would mean port 8787, which a lead behind `tailscale serve` does not open to the tailnet.
 
+### Forwarding to a loopback peer (personal fork)
+
+A peer can keep `COLLIE_HOST=127.0.0.1` when an operator-owned TCP forward, such as Windows
+port forwarding to WSL, carries the lead's connection to that listener. The address stored on
+the lead must name the forwarding endpoint. Preserve Collie's pinned mutual TLS and crew-secret
+checks; a successful call from the peer to the lead does not establish the reverse path.
+
+This fork's `collie doctor` accepts that bind only after the peer records a recent admitted call
+from its pinned lead. The runtime roster must match the trust store, the checkpoint must be fresh,
+and a later crew-secret refusal invalidates that evidence. A restarted peer needs a new call.
+Until then, or after contact goes stale, check the forward and firewall, or bind the peer to an
+address the lead can dial. This diagnostic does not configure forwarding or change listener gates.
+
 `--address` on `crew join` is the address the lead dials this machine at, and it needs a port:
 `--address <host>:8787`. `join` refuses one without a port, because the lead would dial port 443.
 An `https://host:8787` address is still accepted and stored as `host:8787`.
