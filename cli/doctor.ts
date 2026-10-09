@@ -39,7 +39,7 @@ import { chooseSession, parseSessionList, ZELLIJ_LIST_SESSIONS_ARGS } from "../b
 import { bindIsWildcard } from "../bridge/crew/config.ts";
 import { deriveMode } from "../bridge/crew/mode.ts";
 import type { HelloResult, CrewFetch, PeerOutcome } from "../bridge/crew/peer-client.ts";
-import { crewRuntimePath, parseMarker, rosterDrift, type CrewRuntimeMarker } from "../bridge/crew/staleness.ts";
+import { checkpointStale, crewRuntimePath, parseMarker, rosterDrift, type CrewRuntimeMarker } from "../bridge/crew/staleness.ts";
 import { enrollmentOf, TrustStore, type TrustedMember, type TrustStoreData } from "../bridge/crew/trust-store.ts";
 import {
   currentUserSid,
@@ -61,6 +61,7 @@ import { explicitMux, probeMuxes, refusedMux, type MuxSighting } from "./mux.ts"
 import { cacheFindings } from "./cache-findings.ts";
 import { historyFindings, type SnapshotRead } from "./history.ts";
 import { EXIT, type Io } from "./io.ts";
+import { armThresholdMs, CHECKPOINT_INTERVAL_MS } from "./crew-status-deputy.ts";
 import {
   binaryLayout,
   type BinaryLayout,
@@ -229,7 +230,7 @@ export async function cmdDoctor(deps: DoctorDeps, args: readonly string[]): Prom
     updateSource(deps, install),
     ...quarantine(deps, install),
     herdrSocket(deps),
-    bindCheck(deps, mode),
+    bindCheck(deps, mode, runtimeMarker, data),
     bindWildcard(deps),
     acl(deps),
     frontDoor(deps, mode),
@@ -814,20 +815,27 @@ function isLoopbackBind(host: string): boolean {
 }
 
 /**
- * **The #1 field trap.** A peer that kept the default loopback bind answers its own machine and
- * nobody else, so the lead's `hello` never lands, the member never loses its `provisional` marker,
- * and every symptom points at the lead.
+ * A loopback peer needs an operator-owned forward. Only admitted INBOUND lead contact proves
+ * that path: this peer's successful outgoing hello says nothing about who can reach its listener.
  */
-function bindCheck(deps: DoctorDeps, mode: string): Finding {
+function bindCheck(
+  deps: DoctorDeps,
+  mode: string,
+  marker: CrewRuntimeMarker | null,
+  data: TrustStoreData | null,
+): Finding {
   const host = resolvedBind(deps);
   const shown = bindIsWildcard(host) ? "0.0.0.0/:: (COLLIE_HOST empty)" : host;
   if (mode === "peer" && isLoopbackBind(host)) {
+    if (recentInboundLeadContact(deps, marker, data)) {
+      return ok("bind", `${shown} (mode peer) — recent authenticated inbound lead contact confirms forwarding`);
+    }
     const suggestion = tailnetName(deps.exec) ?? "<address the lead can dial>";
     return bad(
       "bind",
-      `COLLIE_HOST=${host} on a PEER — only this machine can reach the crew listener, so the lead's` +
-        " probe never lands and the member stays provisional",
-      `set COLLIE_HOST=${suggestion} in ${join(deps.ctx.configDir, ".env")}, then \`collie restart\``,
+      `COLLIE_HOST=${host} on a PEER — no recent authenticated inbound lead contact confirms` +
+        " a working forward to this loopback listener",
+      `check the forwarding endpoint and firewall, or set COLLIE_HOST=${suggestion} in ${join(deps.ctx.configDir, ".env")}, then \`collie restart\``,
     );
   }
   // The other direction, and it stops the process rather than degrading it: outside a crew, a bind
@@ -847,6 +855,26 @@ function bindCheck(deps: DoctorDeps, mode: string): Finding {
     );
   }
   return ok("bind", `${shown} (mode ${mode})`);
+}
+
+/** Historical, future, or refused contact cannot establish this running peer's inbound path. */
+function recentInboundLeadContact(
+  deps: DoctorDeps,
+  marker: CrewRuntimeMarker | null,
+  data: TrustStoreData | null,
+): boolean {
+  if (marker === null || marker.mode !== "peer" || rosterDrift(marker, data) !== null) return false;
+  const dialled = marker.leadLastDialledAt;
+  if (dialled === null) return false;
+  const now = deps.now();
+  return (
+    marker.bootedAt <= dialled &&
+    dialled <= marker.checkpointedAt &&
+    marker.checkpointedAt <= now &&
+    !checkpointStale(marker, now, CHECKPOINT_INTERVAL_MS) &&
+    now - dialled < armThresholdMs(deps.ctx.env) &&
+    (marker.leadRefusedSecretAt === null || marker.leadRefusedSecretAt < dialled)
+  );
 }
 
 /**

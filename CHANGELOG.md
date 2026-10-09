@@ -23,6 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Doctor recognizes a forwarded loopback peer after recent authenticated lead contact.** The
+  personal fork checks the running peer's matching roster and fresh inbound-contact checkpoint
+  before accepting an operator-owned forward. Missing or stale evidence still reports a bind error.
+
 ## [1.18.1] - 2026-10-09
 
 ### Fixed

@@ -5,7 +5,7 @@ import { delimiter, join } from "node:path";
 import { CREW_PROTOCOL_VERSION } from "../bridge/crew/enrollment.ts";
 import { leadStore, member, CREW, peerStore, T0 } from "../bridge/crew/fixtures.ts";
 import { HOST, hostFor } from "../bridge/host.ts";
-import { markerFor } from "../bridge/crew/staleness.ts";
+import { markerFor, type CrewRuntimeMarker } from "../bridge/crew/staleness.ts";
 import { serializeTrustStore, TrustStore, type TrustStoreData, type TrustStoreIo } from "../bridge/crew/trust-store.ts";
 import { fakeBeaconReader, FAKE_BEACON_NOW, type FakeBeacon } from "../bridge/beacon/fake.ts";
 import { BEACON_SCHEMA_VERSION } from "../bridge/beacon/types.ts";
@@ -664,7 +664,7 @@ describe("collie doctor — the local checks", () => {
     expect(byCheck.get("herdr-socket")?.remedy).toContain("herdr status");
   });
 
-  test("bind: a PEER on loopback is the #1 trap — an error naming the COLLIE_HOST to set", async () => {
+  test("bind: an outgoing hello cannot prove a loopback PEER receives its lead's calls", async () => {
     const peer = peerStore();
     const { code, byCheck } = await findings(
       harness(peer, [hello({ memberId: "desk" })], {
@@ -677,6 +677,78 @@ describe("collie doctor — the local checks", () => {
     // The tailnet name this host answers with is the address it suggests — not a placeholder.
     expect(bind?.remedy).toContain("COLLIE_HOST=laptop.tail.ts.net");
     expect(code).toBe(EXIT.FAIL);
+  });
+
+  test("bind: recent admitted inbound lead contact proves a forwarded loopback peer works", async () => {
+    const peer = peerStore();
+    const marker = {
+      ...markerFor(peer, T0 - 60_000, 42),
+      checkpointedAt: T0,
+      leadLastDialledAt: T0 - 1_000,
+      leadRefusedSecretAt: T0 - 2_000,
+    };
+    for (const host of ["127.0.0.1", "localhost", "::1", "[::1]"]) {
+      const h = harness(peer, [hello({ memberId: "desk" })], {
+        env: { COLLIE_HOST: host },
+        files: without({ ...healthyFiles(), [`${STATE}/crew-runtime.json`]: JSON.stringify(marker) }, HANDLER),
+      });
+      const { byCheck } = await findings(h);
+      expect(byCheck.get("bind")?.status).toBe("ok");
+      expect(byCheck.get("bind")?.detail).toContain("authenticated inbound lead contact");
+      expect(h.files.ops).toEqual([]);
+    }
+  });
+
+  test("bind: missing, stale, inconsistent or refused inbound evidence cannot clear a loopback peer", async () => {
+    const peer = peerStore();
+    const fresh: CrewRuntimeMarker = {
+      ...markerFor(peer, T0 - 60_000, 42),
+      checkpointedAt: T0,
+      leadLastDialledAt: T0 - 1_000,
+    };
+    const cases: readonly (CrewRuntimeMarker | null)[] = [
+      null,
+      { ...fresh, leadLastDialledAt: null },
+      { ...fresh, checkpointedAt: T0 - 45_001, leadLastDialledAt: T0 - 46_000 },
+      { ...fresh, leadLastDialledAt: T0 - 30_000 },
+      { ...fresh, leadLastDialledAt: T0 - 30_001 },
+      { ...fresh, leadLastDialledAt: fresh.bootedAt - 1 },
+      { ...fresh, leadLastDialledAt: T0 + 1 },
+      { ...fresh, checkpointedAt: T0 + 1 },
+      { ...fresh, bootedAt: T0 + 1 },
+      { ...fresh, checkpointedAt: T0 - 2_000 },
+      { ...fresh, mode: "lead" },
+      { ...fresh, roster: ["lead:other-lead"] },
+      { ...fresh, leadRefusedSecretAt: fresh.leadLastDialledAt },
+      { ...fresh, leadRefusedSecretAt: T0 },
+    ];
+    for (const marker of cases) {
+      const files = without(healthyFiles(), HANDLER);
+      if (marker !== null) files[`${STATE}/crew-runtime.json`] = JSON.stringify(marker);
+      const env = marker?.checkpointedAt === T0 - 45_001 ? { COLLIE_STANDBY_ARM_MS: "90000" } : {};
+      const { byCheck } = await findings(harness(peer, [hello({ memberId: "desk" })], { files, env }));
+      expect(byCheck.get("bind")?.status).toBe("error");
+      expect(byCheck.get("bind")?.detail).toContain("no recent authenticated inbound lead contact");
+    }
+  });
+
+  test("bind: contact freshness follows the existing idle-poll and explicit arm thresholds", async () => {
+    const peer = peerStore();
+    const marker: CrewRuntimeMarker = {
+      ...markerFor(peer, T0 - 120_000, 42),
+      checkpointedAt: T0,
+      leadLastDialledAt: T0 - 49_999,
+    };
+    for (const env of [{ COLLIE_POLL_IDLE_MS: "20000" }, { COLLIE_STANDBY_ARM_MS: "50000" }]) {
+      for (const age of [49_999, 50_000]) {
+        const files = without({
+          ...healthyFiles(),
+          [`${STATE}/crew-runtime.json`]: JSON.stringify({ ...marker, leadLastDialledAt: T0 - age }),
+        }, HANDLER);
+        const { byCheck } = await findings(harness(peer, [hello({ memberId: "desk" })], { env, files }));
+        expect(byCheck.get("bind")?.status).toBe(age === 49_999 ? "ok" : "error");
+      }
+    }
   });
 
   test("bind: loopback on a lead or solo is the RIGHT answer, not a finding", async () => {
