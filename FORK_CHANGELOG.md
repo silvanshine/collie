@@ -36,3 +36,5 @@ repositories, outside the original project's fork network.
   stale or future records, contact from an earlier boot, and later secret refusals cannot clear it.
 - Add synthetic regression cases and document operator-owned forwarding. No listener, network,
   authentication, enrollment, or wire-protocol behavior changes.
+- Ignore local Pluram capture state so source provenance stays private and does not mark a
+  clean frozen build as dirty. The capture data remains on disk for local inspection.
