@@ -9,15 +9,18 @@ export interface BuildInfo {
    *  Drives which icon set this bundle was built with; carried here mainly so `build-info.json`
    *  (bridge/version.ts) and the footer stamp agree with what the bundle actually shipped. */
   channel: "release" | "dev";
+  /** Fork only: the `fork/YYYY.M.N` snapshot tag at the built commit, null between snapshots. */
+  fork?: string | null;
 }
 
 // The build stamp baked into this bundle at build time (vite `define`, see vite.config.ts).
 export const BUILD: BuildInfo = __BUILD_INFO__;
 
 /** Short, human-readable footer label, e.g. "v0.3.0 · c9167c3 · 2026-06-30 00:12 UTC". */
-export function buildLabel(info: Pick<BuildInfo, "version" | "sha" | "time"> = BUILD): string {
+export function buildLabel(info: Pick<BuildInfo, "version" | "sha" | "time" | "fork"> = BUILD): string {
   const when = info.time.slice(0, 16).replace("T", " "); // YYYY-MM-DDTHH:mm → YYYY-MM-DD HH:mm
-  return `v${info.version} · ${info.sha} · ${when} UTC`;
+  const fork = info.fork ? ` · ${info.fork}` : "";
+  return `v${info.version} · ${info.sha}${fork} · ${when} UTC`;
 }
 
 // SemVer, loosely: a three-number core, an optional `-prerelease`, an optional `+build` metadata.

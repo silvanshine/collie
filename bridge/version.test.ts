@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { collieVersion, collieVersionBare } from "./version.ts";
+import { collieVersion, collieVersionBare, collieVersionFrom, bareVersionFrom } from "./version.ts";
 
 // ── THE VERSION UNDER A PACKAGE SWAP (M17/02) ───────────────────────────────────────────────────
 //
@@ -46,5 +46,21 @@ describe("the wire version stays the one it is running", () => {
     // The live read exists too, and it is a THUNK the monitor throttles — never an inline call that
     // some handler could end up making on the request path.
     expect(source).toContain("liveVersion: () => collieVersion(rootDir)");
+  });
+});
+
+describe("the fork snapshot names itself to the operator, never on the wire", () => {
+  const MANIFEST = 'version = "1.24.0"\n';
+  const stamp = (fork: string | null) =>
+    JSON.stringify({ version: "1.24.0-dev", sha: "2f4ab403", channel: "dev", fork });
+
+  test("a build at a snapshot tag prints it after the version", () => {
+    expect(collieVersionFrom(stamp("fork/2026.10.1"), MANIFEST)).toBe("1.24.0-dev+2f4ab403 (fork/2026.10.1)");
+    expect(bareVersionFrom(stamp("fork/2026.10.1"), MANIFEST)).toBe("1.24.0-dev+2f4ab403");
+  });
+
+  test("a build between snapshots, or from before the field existed, prints none", () => {
+    expect(collieVersionFrom(stamp(null), MANIFEST)).toBe("1.24.0-dev+2f4ab403");
+    expect(collieVersionFrom('{"version":"1.24.0-dev","sha":"2f4ab403"}', MANIFEST)).toBe("1.24.0-dev+2f4ab403");
   });
 });
