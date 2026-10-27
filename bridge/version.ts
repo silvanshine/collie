@@ -54,7 +54,26 @@ export function manifestVersionFrom(manifest: string | null): string | null {
 export function collieVersionFrom(buildInfo: string | null, manifest: string | null): string {
   const { version, manifestOnly } = resolve(buildInfo, manifest);
   if (version === null) return "unknown";
-  return manifestOnly ? `${version} (manifest; web not built)` : version;
+  if (manifestOnly) return `${version} (manifest; web not built)`;
+  const fork = readForkSnapshot(buildInfo);
+  return fork === null ? version : `${version} (${fork})`;
+}
+
+/**
+ * Fork only: the stamp's `fork` field, the `fork/YYYY.M.N` snapshot the bundle was built at, or
+ * null. Decorates the operator's spelling only; the wire version and {@link readBuildInfo} never
+ * carry it, so crew peers and `update` compare the same strings as upstream's.
+ */
+export function readForkSnapshot(text: string | null): string | null {
+  if (text === null) return null;
+  try {
+    // SAFETY: `JSON.parse` output IS a JsonValue by construction; the field is checked below.
+    const data = JSON.parse(text) as JsonValue;
+    const fork = data !== null && typeof data === "object" && !Array.isArray(data) ? data.fork : undefined;
+    return typeof fork === "string" && fork !== "" ? fork : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

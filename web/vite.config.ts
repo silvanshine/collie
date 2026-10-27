@@ -156,6 +156,15 @@ const pkgVersion = (
     version: string;
   }
 ).version;
+// Fork only: the `fork/YYYY.M.N` snapshot tag at HEAD, or null between snapshots. Not part of
+// `version`, `sha` or `id`, which the crew wire and the stale-bundle check compare.
+function forkSnapshot(): string | null {
+  try {
+    return git("git describe --tags --exact-match --match 'fork/*' HEAD") || null;
+  } catch {
+    return null;
+  }
+}
 const buildSha = gitSha();
 const buildTime = new Date().toISOString();
 // channelFor(pkgVersion's evidence) is computed ONCE and drives both the version stamp above and
@@ -169,6 +178,7 @@ const BUILD_INFO = {
   time: buildTime,
   id: `${stampedVersion}+${buildSha}.${Math.floor(Date.parse(buildTime) / 1000)}`,
   channel,
+  fork: forkSnapshot(),
 };
 
 // Emit dist/build-info.json so the bridge can read the current build id. Kept out of the SW precache
