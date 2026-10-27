@@ -60,4 +60,11 @@ describe("buildLabel", () => {
       "v0.3.0 · c9167c3 · 2026-06-30 00:12 UTC",
     );
   });
+  it("names the fork snapshot after the sha when the build carries one", () => {
+    const info = { version: "1.24.0-dev", sha: "2f4ab403", time: "2026-10-27T00:52:29.141Z" };
+    expect(buildLabel({ ...info, fork: "fork/2026.10.1" })).toBe(
+      "v1.24.0-dev · 2f4ab403 · fork/2026.10.1 · 2026-10-27 00:52 UTC",
+    );
+    expect(buildLabel({ ...info, fork: null })).toBe("v1.24.0-dev · 2f4ab403 · 2026-10-27 00:52 UTC");
+  });
 });

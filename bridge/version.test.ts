@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { collieVersion, collieVersionBare, sameBuild } from "./version.ts";
+import { collieVersion, collieVersionBare, collieVersionFrom, bareVersionFrom, sameBuild } from "./version.ts";
 
 // ── THE VERSION UNDER A PACKAGE SWAP (M17/02) ───────────────────────────────────────────────────
 //
@@ -62,5 +62,21 @@ describe("sameBuild", () => {
     expect(sameBuild("1.25.0-dev+51c0a4", "1.25.0-dev+51c0a4886")).toBe(false);
     expect(sameBuild("1.25.0-dev+51c0a488-dirty", "1.25.0-dev+51c0a4886")).toBe(false);
     expect(sameBuild("1.25.0", "1.25.0-dev+51c0a4886")).toBe(false);
+  });
+});
+
+describe("the fork snapshot names itself to the operator, never on the wire", () => {
+  const MANIFEST = 'version = "1.24.0"\n';
+  const stamp = (fork: string | null) =>
+    JSON.stringify({ version: "1.24.0-dev", sha: "2f4ab403", channel: "dev", fork });
+
+  test("a build at a snapshot tag prints it after the version", () => {
+    expect(collieVersionFrom(stamp("fork/2026.10.1"), MANIFEST)).toBe("1.24.0-dev+2f4ab403 (fork/2026.10.1)");
+    expect(bareVersionFrom(stamp("fork/2026.10.1"), MANIFEST)).toBe("1.24.0-dev+2f4ab403");
+  });
+
+  test("a build between snapshots, or from before the field existed, prints none", () => {
+    expect(collieVersionFrom(stamp(null), MANIFEST)).toBe("1.24.0-dev+2f4ab403");
+    expect(collieVersionFrom('{"version":"1.24.0-dev","sha":"2f4ab403"}', MANIFEST)).toBe("1.24.0-dev+2f4ab403");
   });
 });
