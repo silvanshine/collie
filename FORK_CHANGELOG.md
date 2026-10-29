@@ -18,19 +18,26 @@ repositories, outside the original project's fork network.
 - **Narrow validation:** `bun test cli/doctor.test.ts`, both root and web typechecks, full lint.
 - **Broad validation:** root `bun run test`, web `bun run test`, `bun run test:crew`, and full
   `bun run build`. Record environment-related limitations separately from verified checks.
-- **Consumer edges:** Fedora runs the official 1.23.4 payload (checked 2026-10-26). Preparing
-  this fork does not repin or deploy any installation.
+- **Consumer edges:** Fedora's bridge runs this fork from the jj workspace
+  `~/projects/forks/collie-deploy` since 2026-10-27, built with `scripts/collie-ctl.sh build`.
+  Never run `collie update` there: on a source checkout it moves to the newest upstream tag with
+  Git, dropping the fork commits. Move the workspace onto `custom` and build again instead.
 - **Runtime extensions:** none added by the fork.
-- **Prepared-build identity:** retain upstream manifest version plus the actual fork commit in
-  Collie's existing build stamp (`1.18.1-dev+<commit>` on an untagged fork). Freeze the patch and
-  build from a clean jj child so Git's `HEAD` names the patch rather than its parent. No immutable
-  fork snapshot is released yet.
-  Before a release, add an immutable `fork/YYYY.M.N` ledger entry and make the displayed build
-  identity include its upstream point and snapshot, as required by the shared fork convention.
+- **Build identity:** the upstream manifest version plus the fork commit, in Collie's existing
+  build stamp (`1.24.0-dev+<commit>`). Build from a clean jj child so Git's `HEAD` names the
+  commit rather than its parent. A build at a `fork/YYYY.M.N` tag also records the tag in the
+  stamp's `fork` field, which `collie version` prints in parentheses and the PWA footer shows after
+  the commit. The crew wire version, the stamp's `id` and the release/dev channel do not change.
 
-## Unreleased
+## fork/2026.10.1 (2026-10-29)
+
+First immutable snapshot, on upstream `v1.24.0` (`4bab157e`).
 
 ### Fork modifications
+
+- Name the fork snapshot in the build stamp: `vite.config.ts` writes the exact `fork/*` tag at
+  `HEAD` as `fork`, or null. `collie version` reads `1.24.0-dev+<commit> (fork/2026.10.1)`; the
+  wire spelling stays `1.24.0-dev+<commit>`.
 
 - Replace the unconditional loopback-peer bind error with a diagnostic based on recent admitted
   inbound lead contact from a fresh runtime checkpoint and matching roster. Outgoing probes,
@@ -39,6 +46,11 @@ repositories, outside the original project's fork network.
   authentication, enrollment, or wire-protocol behavior changes.
 - Ignore local Pluram capture state so source provenance stays private and does not mark a
   clean frozen build as dirty. The capture data remains on disk for local inspection.
+
+Checks for the snapshot commit: `bridge/version.test.ts` and `cli/doctor.test.ts` passed
+192/192, root `bun test ./bridge ./cli` passed 10,886/10,886, both typechecks passed and lint
+exited 0. Web vitest failed 2–4 timing-sensitive tests per full run (`router.test.tsx`,
+`detail-offline.test.tsx` among them), each passing when run alone.
 
 ### Sync onto v1.24.0 (2026-10-26)
 
