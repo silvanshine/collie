@@ -9,13 +9,14 @@ repositories, outside the original project's fork network.
 
 - **Maintained bookmark:** `custom`.
 - **Upstream ref:** `main@upstream`; local `main` is a patch-free upstream mirror.
-- **Maintained base:** upstream `v1.24.0`, commit `4bab157edb527266837dd9dd20b67e1ac82efcae`,
-  since the 2026-10-26 sync. The initial base was `v1.18.1`, commit
-  `cfaf95a93df3c9404a03f5f840bf222f0cd6c2ee`.
+- **Maintained base:** upstream `v1.25.3`, commit `9eeedd89b380ac19005da6aa0f72f09a1df2df9c`,
+  since the 2026-11-01 sync. Earlier bases were `v1.24.0` (`4bab157e`, 2026-10-26) and the
+  initial `v1.18.1`, commit `cfaf95a93df3c9404a03f5f840bf222f0cd6c2ee`.
 - **Personal remotes:** Forgejo `origin` and GitHub `github`, both owned by `silvanshine`.
 - **Upstream remote:** anonymous HTTPS, with `/dev/null` as its only push URL.
 - **Snapshot policy:** `snapshot.auto-track = "none()"`; track intentional new files explicitly.
-- **Narrow validation:** `bun test cli/doctor.test.ts`, both root and web typechecks, full lint.
+- **Narrow validation:** `bun test bridge/version.test.ts cli/doctor.test.ts`, web
+  `vitest run src/lib/build.test.ts`, both root and web typechecks, full lint.
 - **Broad validation:** root `bun run test`, web `bun run test`, `bun run test:crew`, and full
   `bun run build`. Record environment-related limitations separately from verified checks.
 - **Consumer edges:** Fedora's bridge runs this fork from the jj workspace
@@ -24,10 +25,48 @@ repositories, outside the original project's fork network.
   Git, dropping the fork commits. Move the workspace onto `custom` and build again instead.
 - **Runtime extensions:** none added by the fork.
 - **Build identity:** the upstream manifest version plus the fork commit, in Collie's existing
-  build stamp (`1.24.0-dev+<commit>`). Build from a clean jj child so Git's `HEAD` names the
+  build stamp (`1.25.3-dev+<commit>`). Build from a clean jj child so Git's `HEAD` names the
   commit rather than its parent. A build at a `fork/YYYY.M.N` tag also records the tag in the
   stamp's `fork` field, which `collie version` prints in parentheses and the PWA footer shows after
   the commit. The crew wire version, the stamp's `id` and the release/dev channel do not change.
+
+## Unreleased
+
+### Fork modifications
+
+- Name the fork snapshot in the build stamp (unchanged from `fork/2026.10.1`).
+- Ignore local Pluram capture state (unchanged).
+- **Dropped:** the doctor forwarded-peer diagnostic. Upstream `76b3eb5b` ("bind row accepts a
+  loopback peer the lead has dialled", first in `v1.25.0`) accepts a loopback peer once its runtime
+  marker records `leadLastDialledAt`. That is looser than the fork's check, which also required a
+  fresh checkpoint from this boot, a matching roster and no later secret refusal. The looser check
+  was kept by decision on 2026-11-01, so the fork no longer touches `cli/doctor.ts`.
+
+### Sync onto v1.25.3 (2026-11-01)
+
+The maintained line was duplicated from base `v1.24.0` (`4bab157e`) onto exact upstream
+`v1.25.3` (`9eeedd89`), the newest tag older than 24 hours. The old tip `1d44c28f`
+(`fork/2026.10.1`) is kept as `archive/pre-sync/2026.11.1`.
+
+| Old | New | Disposition |
+| --- | --- | --- |
+| `445d1eb1` | `936839ec` | Identical (empty: the checkout's initialization). |
+| `8bbe31e8` | `6ea53d5f` | Reduced to the `AGENTS.md` pointer and the initial ledger; the `cli/doctor.ts`, `cli/doctor.test.ts`, `docs/crew.md` and `CHANGELOG.md` hunks were dropped as absorbed upstream. |
+| `e672084e` | `42353920` | Identical. |
+| `2f4ab403` | `bbbb6963` | Identical (ledger). |
+| `7504fde3` | `f07cf758` | Ported. `bridge/version.test.ts` conflicted with upstream's new `sameBuild` import and tests; both kept. The operator-only suffix does not reach either: `sameBuild` callers pass `collieVersionBare`, and `answersThisBuild` gets `/api/health`'s bare `crewVersion` or the runtime marker's stamp `id`. The suffixed `bootVersion` and `liveVersion` are compared only with each other. |
+| `1d44c28f` | `71f91807` | Identical (ledger). |
+
+Checks on the new tip:
+- Narrow: `bridge/version.test.ts` and `cli/doctor.test.ts` passed 210/210, web
+  `src/lib/build.test.ts` passed 11/11, both typechecks passed, and lint exited 0.
+- Negative control: with the `(fork/…)` suffix removed from `collieVersionFrom`, exactly the
+  snapshot test fails (5 pass, 1 fail).
+- Broad: `bun run test:crew` (82/82) and `bun run build` passed. Root `bun run test` passed all
+  13,066 bun tests and failed the same `scripts/collie-ctl.test.sh` assertion as the
+  `v1.24.0` sync ("bun not found"); the script exits 0 run directly. Web `bun run test` passed
+  51,776 and timed out on 2 tests in `src/playground/app.test.tsx` (30 s and 19 s under the
+  full run); the file passes 10/10 alone in 18 s. The fork does not touch the playground.
 
 ## fork/2026.10.1 (2026-10-29)
 
