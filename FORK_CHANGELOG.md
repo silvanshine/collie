@@ -9,13 +9,15 @@ repositories, outside the original project's fork network.
 
 - **Maintained bookmark:** `custom`.
 - **Upstream ref:** `main@upstream`; local `main` is a patch-free upstream mirror.
-- **Maintained base:** upstream `v1.25.3`, commit `9eeedd89b380ac19005da6aa0f72f09a1df2df9c`,
-  since the 2026-11-01 sync. Earlier bases were `v1.24.0` (`4bab157e`, 2026-10-26) and the
-  initial `v1.18.1`, commit `cfaf95a93df3c9404a03f5f840bf222f0cd6c2ee`.
+- **Maintained base:** upstream `v1.25.5`, commit `5c45b3df6d9e7b1c7efd9ea4ddc1376c6a73f198`,
+  since the 2026-11-03 sync. Earlier bases were `v1.25.3` (`9eeedd89`, 2026-11-01), `v1.24.0`
+  (`4bab157e`, 2026-10-26) and the initial `v1.18.1`, commit
+  `cfaf95a93df3c9404a03f5f840bf222f0cd6c2ee`.
 - **Personal remotes:** Forgejo `origin` and GitHub `github`, both owned by `silvanshine`.
 - **Upstream remote:** anonymous HTTPS, with `/dev/null` as its only push URL.
 - **Snapshot policy:** `snapshot.auto-track = "none()"`; track intentional new files explicitly.
-- **Narrow validation:** `bun test bridge/version.test.ts cli/doctor.test.ts`, web
+- **Narrow validation:** `bun test bridge/fork-release-check.test.ts bridge/update.test.ts
+  bridge/version.test.ts cli/doctor.test.ts`, web
   `vitest run src/lib/build.test.ts`, both root and web typechecks, full lint.
 - **Broad validation:** root `bun run test`, web `bun run test`, `bun run test:crew`, and full
   `bun run build`. Record environment-related limitations separately from verified checks.
@@ -23,12 +25,67 @@ repositories, outside the original project's fork network.
   `~/projects/forks/collie-deploy` since 2026-10-27, built with `scripts/collie-ctl.sh build`.
   Never run `collie update` there: on a source checkout it moves to the newest upstream tag with
   Git, dropping the fork commits. Move the workspace onto `custom` and build again instead.
+  Since `fork/2026.11.2` the bridge does not check upstream releases at all, so the phone never
+  offers that update. A new upstream release reaches the bridge only through a fork sync.
 - **Runtime extensions:** none added by the fork.
 - **Build identity:** the upstream manifest version plus the fork commit, in Collie's existing
-  build stamp (`1.25.3-dev+<commit>`). Build from a clean jj child so Git's `HEAD` names the
+  build stamp (`1.25.5-dev+<commit>`). Build from a clean jj child so Git's `HEAD` names the
   commit rather than its parent. A build at a `fork/YYYY.M.N` tag also records the tag in the
   stamp's `fork` field, which `collie version` prints in parentheses and the PWA footer shows after
   the commit. The crew wire version, the stamp's `id` and the release/dev channel do not change.
+
+## Unreleased
+
+### Fork modifications
+
+- Name the fork snapshot in the build stamp (unchanged).
+- Ignore local Pluram capture state (unchanged).
+- **New:** the bridge never checks upstream releases. `bridge/index.ts` builds its release reads
+  with `forkReleaseFetchers()` (`bridge/update.ts`) instead of `releaseFetchers`, so the tag fetch
+  fails at once with a fork reason and nothing asks GitHub. With no `latest` there is no "Collie
+  update available" push, no "available" band and no update offer on the phone, whatever the
+  `updates` notify pref says. A manual "check for updates" reports a failed check, never "Up to
+  date". The boot log says the check is off. Left alone: `collie update --check`, `doctor`, the
+  restart-needed band and the PWA bundle self-updater. `bridge/fork-release-check.test.ts` covers
+  it.
+
+### Sync onto v1.25.5 (2026-11-03)
+
+The maintained line was duplicated from base `v1.25.3` (`9eeedd89`) onto exact upstream `v1.25.5`
+(`5c45b3df`), the newest tag older than 24 hours (`v1.25.6` was tagged that day;
+`v1.26.0-edge.1` is a prerelease). `main@upstream` was `169fecfe`. The old tip `04773c7b`
+(`fork/2026.11.1`) is kept as `archive/pre-sync/2026.11.2`.
+
+| Old | New | Disposition |
+| --- | --- | --- |
+| `936839ec` | `2d4e0955` | Identical (empty: the checkout's initialization). |
+| `6ea53d5f` | `d38aff87` | Identical. |
+| `42353920` | `587c8877` | Identical. |
+| `bbbb6963` | `9f3e64d6` | Identical (ledger). |
+| `f07cf758` | `5a5e671f` | Identical. |
+| `71f91807` | `7fbcbe26` | Identical (ledger). |
+| `c489644d` | `3b409b37` | Identical (ledger). |
+| `04773c7b` | `bd2f5396` | Identical (ledger). |
+
+`git range-diff` marks all eight `=`, none conflicted, and the duplicated `FORK_CHANGELOG.md` was
+byte-identical to the old tip's before this entry.
+
+Checks on the new tip:
+- Narrow: the four bun files passed 330/330, web `src/lib/build.test.ts` passed 11/11, both
+  typechecks passed, and lint exited 0.
+- Negative control: with `forkReleaseFetchers` answering a tag and `index.ts` back on
+  `releaseFetchers`, all three fork tests fail (0 pass, 3 fail).
+- Broad: `bun run build` passed. Root `bun run test` passed all 13,136 bun tests, then stopped at
+  the known `scripts/collie-ctl.test.sh` assertion ("bun not found"), which exits 0 run directly.
+  The scripts after it in the chain were run one by one: all exit 0 except
+  `scripts/collie-cli.test.sh`, which fails the same "bun not found" assertion on plain `v1.25.5`
+  in a control workspace. Web `bun run test` passed 51,860 and failed 2 (`app.test.tsx` in the
+  playground and `wide-layout.test.tsx`), both of which pass alone (62/62). `bun run test:crew`
+  passed 82/82 in 4 of 6 runs; each other run failed one TLS-pool timing test in "a cold
+  handshake priced above the budget". Plain `v1.25.5` failed the same group's "ABORTED
+  handshake" test in 1 of 5 runs, so this is an upstream flake. The fork does not touch the crew
+  harness or the web app.
+- Review: GPT-6.1 Sol, SHIP, on the feature commit.
 
 ## fork/2026.11.1 (2026-11-01)
 
