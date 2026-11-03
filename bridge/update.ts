@@ -595,6 +595,25 @@ export function releaseFetchers(repo: string, env: Readonly<Record<string, strin
   };
 }
 
+/** Why a fork build has no release check: what the boot line says, and what the check fails with. */
+export const FORK_RELEASE_CHECK_OFF =
+  "This is a personal fork build: the release check is off. A new upstream release arrives by a fork sync, never by `collie update`.";
+
+/**
+ * The personal fork's release reads: none. An upstream release names no fork commit, and taking one
+ * through `collie update` moves a source checkout to the upstream tag and drops the fork. So the
+ * bridge never asks GitHub. With no tags there is no `latest`, so there is no update push, no
+ * "available" band and no update offer. The check fails the way a refused mirror does above, so a
+ * manual "check for updates" reports a failed check rather than "Up to date".
+ */
+export function forkReleaseFetchers(): ReleaseFetchers {
+  return {
+    fetchTags: () => Promise.reject(new Error(FORK_RELEASE_CHECK_OFF)),
+    fetchReleaseReading: () => Promise.resolve(null),
+    warning: FORK_RELEASE_CHECK_OFF,
+  };
+}
+
 /** The raw mirror value to hand a child that starts with a bare environment, or null when unset. */
 export const mirrorValue = (env: Readonly<Record<string, string | undefined>>): string | null => {
   const value = env[UPDATE_MIRROR_ENV]?.trim() ?? "";

@@ -210,8 +210,8 @@ import {
   bridgeStampSync,
   compareSemver,
   githubReleaseUrl,
+  forkReleaseFetchers,
   mirrorValue,
-  releaseFetchers,
   UpdateMonitor,
   UpdateStateStore,
   updateDigestBody,
@@ -937,8 +937,9 @@ await updateStore.load();
 // The repo the release check + release links point at. Defaults to Collie's own; overridable for a
 // fork (or a synthetic test target) via COLLIE_UPDATE_REPO.
 const updateRepo = process.env.COLLIE_UPDATE_REPO?.trim() || "AltanS/collie";
-// The release reads, with the rehearsal mirror (a loopback-only test seam) decided in one place.
-const releaseReads = releaseFetchers(updateRepo, process.env);
+// The personal fork asks GitHub for no releases (`forkReleaseFetchers`), so it never offers an
+// upstream update. Upstream reads them here with `releaseFetchers`, from the repo and the env.
+const releaseReads = forkReleaseFetchers();
 if (releaseReads.warning !== null) console.warn(`[update] ${releaseReads.warning}`);
 // How this Collie is installed — the ONE shared classifier (`cli/install-kind.ts`), probed once at
 // startup because the answer cannot change under a running process (an update restarts the service).
