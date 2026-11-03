@@ -34,7 +34,10 @@ repositories, outside the original project's fork network.
   stamp's `fork` field, which `collie version` prints in parentheses and the PWA footer shows after
   the commit. The crew wire version, the stamp's `id` and the release/dev channel do not change.
 
-## Unreleased
+## fork/2026.11.2 (2026-11-03)
+
+Third snapshot, on upstream `v1.25.5` (`5c45b3df`). Its tree differs from the checked sync tip
+`37e0143e` only in this ledger, so the checks below apply to it.
 
 ### Fork modifications
 
