@@ -46,7 +46,7 @@
 // Pure: no DOM, no Bun API, no harness name. One log and one context always give one Surface.
 
 import { readCuesFor, runningSign, type CueRead } from "./cues";
-import { coveredFrame, findInputFrame, frameEdge, overlayInRows, rowText, type Frame, type FrameRow, type IdleProfile } from "./frame";
+import { coveredFrame, draftBudget, findInputFrame, frameEdge, overlayInRows, rowText, type Frame, type FrameRow, type IdleProfile } from "./frame";
 import { LOST_STOP_READS, LOST_STOP_SPAN_MS, SETTLE_MS, type EdgeKind } from "./edges";
 import { isFree, type Ask, type Surface, type SurfaceComposer, type SurfaceModal, type SurfaceReason, type SurfaceTurn } from "./surface";
 
@@ -244,7 +244,8 @@ export function endsInsideFrame(rows: readonly FrameRow[], idle: IdleProfile): b
   let i = texts.length - 1;
   while (i >= 0 && texts[i]!.trim().length === 0) i--;
   let crossed = 0;
-  while (i >= 0 && frameEdge(texts[i]!, idle) === null && crossed < idle.frame.maxDraftRows) {
+  const budget = draftBudget(idle, rows.length);
+  while (i >= 0 && frameEdge(texts[i]!, idle) === null && crossed < budget) {
     crossed++;
     i--;
   }

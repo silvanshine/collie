@@ -3649,3 +3649,24 @@ matching `…e/.cache`; no other private text was on screen. The lab is
 
 On the bridge itself omp 18.6.1 reads as a **shell** on herdr-core: it sends no OSC 7501 status, and
 the core adapter names an agent only from that report, so the omp profile above is not applied live.
+
+## Interlace input box (fork addition, captured 2026-11-17, Interlace 2026.11.2, Herdr)
+
+Read with `herdr pane read --source visible --format ansi` from a throwaway pane, the same bytes the
+bridge's pane route returns, then scrubbed: the workspace path in the state row became
+`/tmp/collie-interlace-lab` padded to the same width, and the home folder in the approval's prompt
+became `/home/op`. The captures back the `interlace` input profile.
+
+| Fixture | State / what's in it |
+|---|---|
+| `interlace--fresh-idle.txt` | A new session: a blank notice row, `>`, the green state row ` idle · <workspace>` in reverse video, the dim usage row. Labelled `idle` |
+| `interlace--idle-after-turn.txt` | The same after two turns, the transcript above. Labelled `idle` |
+| `interlace--draft.txt`, `interlace--draft-multiline.txt`, `interlace--draft-wrapped.txt` | A one-row draft, a draft with a Ctrl+J newline, and a draft wrapped onto a second row; later rows start with two spaces. Labelled `draft` |
+| `interlace--slash-popup.txt` | The input holds `/`; the command list is drawn over the transcript's last rows, above the blank notice row. Labelled `popup`, reads as a draft |
+| `interlace--working.txt` | A running turn: ` ⠋ working 0s · <workspace>` in yellow. Labelled `running` |
+| `interlace--working-queued.txt`, `interlace--working-queued-draft.txt` | Enter in a turn queued a message: `next: then say done` over the notice row; the second holds a new draft too. Labelled `running` |
+| `interlace--think-picker.txt`, `interlace--think-picker-query.txt`, `interlace--model-picker-query.txt` | `/think` and `/model` sent alone: the choices over the transcript's last rows and the query on the notice row (`thinking level:   4/7`, `model: flash  1/3`). No frame. Labelled `dialog`, cues-blind |
+| `interlace--find.txt` | Ctrl+F: `find: tide  6/6` on the notice row. No frame. Labelled `dialog`, cues-blind |
+| `interlace--approval.txt` | An approval: the question with `(y or n, then Enter)` on the notice row and ` waiting on an approval · <workspace>` in the state row. Labelled `dialog` |
+| `interlace--notice.txt` | After one Ctrl+C: `cancelling the turn; Ctrl-C again quits` on the notice row, which stays until the next line. No frame. Labelled `other` |
+| `interlace--steer-mode.txt`, `interlace--steer-mode-idle.txt` | Ctrl+S on an empty input: ` idle · steer · <workspace>`, first with its notice and then with a blank notice row. The state row is no bottom edge, so no frame. Labelled `other` |

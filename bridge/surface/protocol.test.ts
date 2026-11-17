@@ -10042,6 +10042,126 @@ describe("OMP: a text that starts with its queue prefix is refused before any ke
   });
 });
 
+describe("Interlace: a text whose last word opens the file list is refused before any key", () => {
+  /** Interlace 2026.11.2's screen: the transcript, the blank notice row, the `>` input rows, the state row, the usage row. */
+  class InterlacePane extends FakePane {
+    constructor() {
+      super("generic");
+      this.transcript = Array.from({ length: 6 }, (_, i) => `assistant: an earlier row ${String(i)}`);
+    }
+
+    override render(): string {
+      const input = this.box.split("\n").map((line, i) => (i === 0 ? `> ${line}`.trimEnd() : `  ${line}`));
+      return [...this.transcript, "", ...input, " idle · /tmp/collie-interlace-lab", " 12% of the context"].join("\n");
+    }
+  }
+
+  // Herdr has no per-line paste, so a text is typed there, and a typed `@` word opens the list.
+  const interlace = (paste = false): Rig => rig({ harness: "interlace", version: "2026.11.2", paste, pane: new InterlacePane() });
+
+  test("the check is data on the profile: only Interlace opts in", () => {
+    for (const [id, profile] of loadProfiles()) expect(profile.reservedLastWordLeads, id).toEqual(id === "interlace" ? ["@"] : undefined);
+  });
+
+  test("a last word that starts with @ is refused reserved_lead in every writing mode, nothing typed", async () => {
+    for (const mode of ["send", "append", "replace", "command"] as const) {
+      for (const text of ["see @src/main.rs", "look at\nthe file @notes", "look\n@src", "ask @session:abc", "/review @src"]) {
+        // A plain send or an Add of a slash text is refused earlier, by the lead rule.
+        if ((mode === "send" || mode === "append") && text.startsWith("/")) continue;
+        const { pane, send } = interlace();
+        const answer = await send(text, { mode });
+        expect(answer.receipt, `${mode} ${text}`).toMatchObject({ outcome: "refused", reason: "reserved_lead", keys: [] });
+        expect(answer.receipt?.detail, `${mode} ${text}`).toContain("ends in a word that starts with @");
+        expect(pane.calls, `${mode} ${text}`).toEqual([]);
+        expect(pane.keysSeen, `${mode} ${text}`).toEqual([]);
+      }
+    }
+  });
+
+  test("an @ word at the start or further in and an address are typed and sent: the list closes when the cursor leaves the word", async () => {
+    for (const text of ["@notes please summarize", "see @src/main.rs first", "mail pat@example.org", "the last line\nhas @one word after"]) {
+      const { pane, send } = interlace();
+      expect((await send(text)).receipt, text).toMatchObject({ outcome: "sent" });
+      expect(pane.transcript.at(-1), text).toBe(`> ${text.replace(/\n/gu, " ")}`);
+    }
+  });
+
+  test("a space after the @ word lets the text go; a line break after it does not, because the empty last line is dropped", async () => {
+    const spaced = interlace();
+    expect((await spaced.send("see @src ")).receipt).toMatchObject({ outcome: "sent" });
+    expect(spaced.pane.calls).toContain("type:see @src ");
+    const broken = interlace();
+    expect((await broken.send("see @src\n")).receipt).toMatchObject({ outcome: "refused", reason: "reserved_lead", keys: [] });
+    expect(broken.pane.calls).toEqual([]);
+  });
+
+  test("where the multiplexer pastes, no list opens: only an Add, whose draft may have one open, is refused", async () => {
+    const pasted = interlace(true);
+    expect((await pasted.send("see @src/main.rs")).receipt).toMatchObject({ outcome: "sent" });
+    expect(pasted.pane.calls).toContain("paste:see @src/main.rs");
+    expect(pasted.pane.transcript.at(-1)).toBe("> see @src/main.rs");
+    for (const mode of ["replace", "command"] as const) {
+      const made = interlace(true);
+      expect((await made.send("/review @src", { mode })).receipt, mode).toMatchObject({ outcome: "sent" });
+      expect(made.pane.calls, mode).toContain("paste:/review @src");
+      expect(made.pane.transcript.at(-1), mode).toBe("> /review @src");
+    }
+  });
+
+  test("an Add is read with the draft it joins: the word the cursor ends in is the draft's last word and the text", async () => {
+    // Typed (Herdr): the draft's `@` word goes on through a text with no space in front. The draft is
+    // proven by a probe first, as every draft is, and the text itself is never typed.
+    const joined = interlace();
+    joined.pane.box = "see @src";
+    expect((await joined.send("-old/main.rs", { mode: "append" })).receipt).toMatchObject({ outcome: "refused", reason: "reserved_lead" });
+    expect(joined.pane.box).toBe("see @src");
+    expect(joined.pane.calls.filter((call) => call.includes("main.rs"))).toEqual([]);
+    // The read drops a space at the draft's end, so the text's own `@` word is refused before any key.
+    const own = interlace();
+    own.pane.box = "mail pat";
+    expect((await own.send("@example.org", { mode: "append" })).receipt).toMatchObject({ outcome: "refused", reason: "reserved_lead", keys: [] });
+    expect(own.pane.calls).toEqual([]);
+    const typed = interlace();
+    typed.pane.box = "see @src";
+    expect((await typed.send(" and the tests", { mode: "append" })).receipt).toMatchObject({ outcome: "sent" });
+    expect(typed.pane.transcript.at(-1)).toBe("> see @src and the tests");
+  });
+
+  test("where the multiplexer pastes, an Add is refused only when the draft's last word may have the list open", async () => {
+    // No list is open over this draft, and a paste opens none.
+    const free = interlace(true);
+    free.pane.box = "look at";
+    expect((await free.send(" @src/main.rs", { mode: "append" })).receipt).toMatchObject({ outcome: "sent" });
+    expect(free.pane.calls).toContain("paste: @src/main.rs");
+    expect(free.pane.transcript.at(-1)).toBe("> look at @src/main.rs");
+    // The draft's `@` word may have the list open, and a paste changes an open list instead of closing it.
+    for (const text of ["-old/main.rs", " and @lib"]) {
+      const { pane, send } = interlace(true);
+      pane.box = "see @src";
+      expect((await send(text, { mode: "append" })).receipt, text).toMatchObject({ outcome: "refused", reason: "reserved_lead" });
+      expect(pane.box, text).toBe("see @src");
+      expect(pane.calls.filter((call) => call.includes(text.trim())), text).toEqual([]);
+    }
+    // The newline key closes an open list, and the paste after it opens none.
+    for (const text of ["-old\nmore", " and the tests\n@lib"]) {
+      const { pane, send } = interlace(true);
+      pane.box = "see @src";
+      expect((await send(text, { mode: "append" })).receipt, text).toMatchObject({ outcome: "sent" });
+      expect(pane.transcript.at(-1), text).toBe(`> see @src${text.replace(/\n/gu, " ")}`);
+    }
+    // The cursor leaves the draft's `@` word, so the open list closes.
+    const left = interlace(true);
+    left.pane.box = "see @src";
+    expect((await left.send(" and the tests", { mode: "append" })).receipt).toMatchObject({ outcome: "sent" });
+    expect(left.pane.transcript.at(-1)).toBe("> see @src and the tests");
+  });
+
+  test("another profile reads the same words as plain text", async () => {
+    const { send } = rig({ harness: "claude", version: "2.1.200", paste: false });
+    expect((await send("see @src/main.rs")).receipt).toMatchObject({ outcome: "sent" });
+  });
+});
+
 describe("OMP: a text that holds a paste chip's label is refused before any key (gang 13-drafts, stale chip)", () => {
   test("the check is data on the profile: only OMP opts in", () => {
     expect(loadProfiles().get("omp")?.collapse.refuseLiteral).toBe(true);

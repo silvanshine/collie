@@ -98,6 +98,7 @@ local:
   ✓        sends-cursor             no sends in the last 7 days
   ✓        sends-grok               no sends in the last 7 days
   ✓        sends-hermes             no sends in the last 7 days
+  ✓        sends-interlace          no sends in the last 7 days
   ✓        sends-kiro               no sends in the last 7 days
   ✓        sends-muse               no sends in the last 7 days
   ✓        sends-omp                no sends in the last 7 days
@@ -219,6 +220,7 @@ local:
   ✓        sends-cursor             no sends in the last 7 days
   ✓        sends-grok               no sends in the last 7 days
   ✓        sends-hermes             no sends in the last 7 days
+  ✓        sends-interlace          no sends in the last 7 days
   ✓        sends-kiro               no sends in the last 7 days
   ✓        sends-muse               no sends in the last 7 days
   ✓        sends-omp                no sends in the last 7 days

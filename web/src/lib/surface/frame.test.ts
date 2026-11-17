@@ -1049,3 +1049,46 @@ describe("the draft of a soft-wrapped box joins the rows the way they were broke
     expect(draftOf([cjk.slice(0, 18), cjk.slice(18, 36), cjk.slice(36)], 40)).toBe(cjk);
   });
 });
+
+describe("Interlace: a tall draft (fork addition)", () => {
+  const INTERLACE = requireProfile("interlace").idle;
+  // The input grows to 30% of the pane: 36 rows on a 120-row pane. Later rows start with two spaces.
+  const screen = (draftRows: number, paneRows = draftRows + 83): StyledLine[] =>
+    lines(
+      ...Array.from({ length: paneRows - draftRows - 3 }, (_, i) => `assistant: row ${String(i)}`),
+      "",
+      "> w0",
+      ...Array.from({ length: draftRows - 1 }, (_, i) => `  w${String(i + 1)}`),
+      " idle · /tmp/collie-interlace-lab",
+      " 12% of the context",
+    );
+
+  it("reads a draft of 36 rows, more than a 30-row walk would cross", () => {
+    const frame = findInputFrame(screen(36), INTERLACE)!;
+    expect(frame.top).toBe(80);
+    expect(frame.interior.prompt).toBe(81);
+    expect(frame.interior.text).toBe(Array.from({ length: 36 }, (_, i) => `w${String(i)}`).join(" "));
+  });
+
+  it("reads a draft of 102 rows, the input of a 340-row pane", () => {
+    const rows = screen(102, 340);
+    expect(rows).toHaveLength(340);
+    const frame = findInputFrame(rows, INTERLACE)!;
+    expect(frame.top).toBe(235);
+    expect(frame.interior.prompt).toBe(236);
+    expect(frame.interior.text).toBe(Array.from({ length: 102 }, (_, i) => `w${String(i)}`).join(" "));
+  });
+
+  it("reads a draft of 600 rows, the input of a 2000-row pane: the bound grows with the screen", () => {
+    const frame = findInputFrame(screen(600, 2000), INTERLACE)!;
+    expect(frame.top).toBe(1397);
+    expect(frame.interior.prompt).toBe(1398);
+  });
+
+  it("gives no frame past 30% of the rows read, so a taller box is never typed into", () => {
+    // The walk counts the rows under the prompt row, so the bound is the share and the prompt row.
+    expect(findInputFrame(screen(37, 120), INTERLACE)).not.toBeNull();
+    expect(findInputFrame(screen(38, 120), INTERLACE)).toBeNull();
+    expect(findInputFrame(screen(104, 340), INTERLACE)).toBeNull();
+  });
+});

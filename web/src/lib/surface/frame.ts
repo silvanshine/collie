@@ -657,6 +657,15 @@ function walkBelow(
 }
 
 /**
+ * How many rows the walk up a box may cross on a read of `screenRows` rows: the profile's
+ * `maxDraftRows`, or its `maxDraftShare` of the rows read when that is more (fork addition).
+ */
+export function draftBudget(idle: IdleProfile, screenRows: number): number {
+  const share = idle.frame.maxDraftShare;
+  return share === undefined ? idle.frame.maxDraftRows : Math.max(idle.frame.maxDraftRows, Math.floor((screenRows * share) / 100));
+}
+
+/**
  * The frame whose bottom edge is row `bottom`, or null when that row is no bottom edge or the frame
  * does not close above it.
  *
@@ -673,7 +682,7 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   if (bottomText === undefined || anchored(bottomText, c.bottom) === null) return null;
 
   const strict = blankTop(idle);
-  const budget = idle.frame.maxDraftRows;
+  const budget = draftBudget(idle, rows.length);
   // The width an edge row must reach ({@link spansBox}); a blank top edge measures nothing.
   const span = c.top.blank ? null : bottomText;
   /** The edge a row is, a prompt row or a row as wide as the box: a narrower rule is the draft's. */
@@ -812,7 +821,7 @@ function interiorFrameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePr
       listed = true;
     }
   }
-  const budget = idle.frame.maxDraftRows;
+  const budget = draftBudget(idle, rows.length);
 
   // The last row of the box's interior: the bottom edge itself on an open box.
   let last = open ? bottom : bottom - 1;

@@ -2441,6 +2441,91 @@
    "version": "2026.10.16",
    "state": "idle"
   },
+  "interlace--approval.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "dialog"
+  },
+  "interlace--draft.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "draft"
+  },
+  "interlace--draft-multiline.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "draft"
+  },
+  "interlace--draft-wrapped.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "draft"
+  },
+  "interlace--find.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "dialog"
+  },
+  "interlace--fresh-idle.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "idle"
+  },
+  "interlace--idle-after-turn.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "idle"
+  },
+  "interlace--model-picker-query.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "dialog"
+  },
+  "interlace--notice.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "other"
+  },
+  "interlace--slash-popup.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "popup"
+  },
+  "interlace--steer-mode.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "other"
+  },
+  "interlace--steer-mode-idle.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "other"
+  },
+  "interlace--think-picker.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "dialog"
+  },
+  "interlace--think-picker-query.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "dialog"
+  },
+  "interlace--working.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "running"
+  },
+  "interlace--working-queued.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "running"
+  },
+  "interlace--working-queued-draft.txt": {
+   "harness": "interlace",
+   "version": "2026.11.2",
+   "state": "running"
+  },
   "grok--ask-color-moved.txt": {
    "harness": "grok",
    "version": "unversioned",

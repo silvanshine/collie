@@ -2893,7 +2893,7 @@ export class SendProtocol {
     const match = joins ? ((await this.deps.profile(target.harness, target.paneId)) ?? (await this.heldPlainProfile(request, waiting, target.paneId, generation))) : null;
     if (match !== null && !(request.mode === "command" && runsInTurnEntry(request.text, match) !== null)) {
       const state = this.bareState(request, accepted.record, target, match);
-      const refusal = textRefusal(request, match);
+      const refusal = textRefusal(request, match, this.deps.mux.pasteText !== undefined);
       if (refusal !== null) return this.settle(state, refusal);
       // A command the profile never lets wait is refused, never held: it would act on a later session.
       if (state.command && neverHeldEntry(request.text, match) !== null) return this.settle(state, new Ended("refused", "turn_running", { detail: NEVER_HELD }));
@@ -3828,7 +3828,7 @@ export class SendProtocol {
     const writes = request.mode === "send" || request.mode === "command" || request.mode === "append" || request.mode === "replace";
 
     if (writes) {
-      const refusal = textRefusal(request, match);
+      const refusal = textRefusal(request, match, this.deps.mux.pasteText !== undefined);
       if (refusal !== null) throw refusal;
     }
     // A steer (M69): who asked, and whether it is a message to a pane that can be steered at all.
@@ -3976,6 +3976,18 @@ export class SendProtocol {
         // Add to it on a box the person emptied since the phone saw its draft: the key would stand
         // alone in the box, and the notice would take it.
         if (boxText(frame).trim().length === 0 && this.answersNotice(state, s0)) throw noticeRefusal(s0);
+        // The word the cursor ends in is the draft's last word and the text together (fork addition).
+        // The read drops a space at the draft's end, so the text's own last word counts too. Where the
+        // write is a paste, a list is open after it only when one was open before: the draft's own last
+        // word opened it. The draft is the proven one, so the proof's probe has come and gone by now.
+        const draft = boxText(frame);
+        // Only a text of one line goes on from the draft's last word: a later line starts its own, and
+        // the newline key in front of it closes an open list, which a paste after it does not open again.
+        const one = lines.length === 1;
+        const last = lines.at(-1) ?? "";
+        const wordLead = (one ? lastWordLead(draft + last, match) : undefined) ?? lastWordLead(last, match);
+        const listOpen = pastesText(match, this.deps.mux.pasteText !== undefined) ? one && lastWordLead(draft, match) !== undefined : true;
+        if (wordLead !== undefined && listOpen) throw lastWordRefusal(wordLead);
         break;
       }
       case "send":
@@ -5650,13 +5662,30 @@ function draftRefusal(state: RunState, s0: Snap): Ended {
   return new Ended("refused", "draft_present", { surface: s0.surface, framed, offers, detail: "The box already holds a draft." });
 }
 
+/** Whether a text goes into this profile's box as a paste, which opens no list, and not as typed keys. */
+function pastesText(match: ProfileMatch | null, pastes: boolean): boolean {
+  return pastes && match?.profile.paste?.bracketed === true;
+}
+
+/** The profile's lead (`reservedLastWordLeads`) that the last word of `text`'s last line starts with, if any. */
+function lastWordLead(text: string, match: ProfileMatch | null): string | undefined {
+  const word = /\S+$/u.exec(text.split("\n").at(-1) ?? "")?.[0];
+  return word === undefined ? undefined : match?.profile.reservedLastWordLeads?.find((entry) => word.startsWith(entry));
+}
+
+function lastWordRefusal(lead: string): Ended {
+  return new Ended("refused", "reserved_lead", {
+    detail: `This text ends in a word that starts with ${lead}. The program opens a list for such a word, and Enter would take an entry of the list instead of sending. The text was not typed. End the text with another word.`,
+  });
+}
+
 /**
  * The rules a text meets before any read: a plain send may not start with a reserved lead (it has the
  * command route), and a text of more than one line needs a profile's newline key. Null when it passes.
  * A Replace may start with one: it is the draft offer's answer to a command refused `draft_present`
  * (a typed `/model`, the belt's Model), the box is emptied first, and the text goes out as a command.
  */
-function textRefusal(request: SendRequest, match: ProfileMatch | null): Ended | null {
+function textRefusal(request: SendRequest, match: ProfileMatch | null, pastes: boolean): Ended | null {
   const lines = sendLines(request.text);
   const leads = match?.profile.reservedLeads ?? GENERIC_LEADS;
   const notes = match?.profile.reservedLeadNotes;
@@ -5670,6 +5699,11 @@ function textRefusal(request: SendRequest, match: ProfileMatch | null): Ended | 
   if (match?.profile.collapse.refuseLiteral === true && lines.some((line) => new RegExp(match.profile.collapse.pattern, "u").test(line))) {
     return new Ended("refused", "reserved_lead", { detail: CHIP_TOKEN });
   }
+  // A list the harness opens on the word the cursor ends in would take the Enter (the profile says so).
+  // A pasted text opens no list, so only a typed write is refused here. An Add is checked again with
+  // the draft it joins, once that is read (`steps`).
+  const wordLead = pastesText(match, pastes) ? undefined : lastWordLead(lines.at(-1) ?? "", match);
+  if (wordLead !== undefined) return lastWordRefusal(wordLead);
   if (lines.length > 1 && match === null) return new Ended("refused", "multiline", { detail: "This harness has no profile, so its newline key is unknown; send one line at a time." });
   return null;
 }

@@ -1,0 +1,67 @@
+{
+  "id": "interlace",
+  "identity": {
+    "binary": "interlace",
+    "versionCommand": ["interlace", "--version"],
+    "versionRegex": "\\d+\\.\\d+\\.\\d+"
+  },
+  "versions": [
+    {
+      "range": "2026.11.2 - 2026.11.2",
+      "status": "provisional",
+      "verifiedThrough": null,
+      "verifiedOn": null
+    }
+  ],
+  "idle": {
+    "frame": {
+      "top": { "pattern": "^$", "column": 0, "blank": true },
+      "prompt": { "pattern": "^>(?: (?<draft>.*))?$", "column": 0 },
+      "bottom": {
+        "pattern": "^ (?:[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] )?(?:idle|working)(?: \\d+s)? · (?!steer · )\\S.*$",
+        "column": 1
+      },
+      "continuationIndent": 2,
+      "maxDraftRows": 1,
+      "maxDraftShare": 30,
+      "maxTailRows": 1,
+      "note": "Interlace 2026.11.2 (apps/interlace/src/tui.rs `draw`): bottom-up the screen ends in a usage row, the state row, the input rows (`> ` then two spaces, up to 30% of the screen) and one notice row, which is blank while nothing is said. The blank notice row is the top edge. A notice, an approval's question, a picker's or the search's query on that row leaves no frame, so nothing is typed. The state row is the bottom edge only while it says `idle` or `working`: not `attaching`, not `waiting on an approval`, and not in the steer mode (` · steer · `), where Enter steers the turn instead of queueing."
+    },
+    "placeholders": {
+      "texts": [],
+      "sgr": 2
+    },
+    "volatile": {
+      "above": { "maxRows": 4 },
+      "below": { "maxRows": 1, "footerMaxRows": 0 }
+    },
+    "runningRows": ["^ (?:[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] )?working\\b"]
+  },
+  "keys": {
+    "submit": ["Enter"],
+    "newline": ["ctrl+j"],
+    "interrupt": ["ctrl+c"],
+    "clear": { "key": "Backspace", "slack": 16 },
+    "navigation": {
+      "up": "Up",
+      "down": "Down",
+      "confirm": "Enter",
+      "cancel": "Escape"
+    },
+    "enterWhileRunning": "queues"
+  },
+  "collapse": {
+    "pattern": "\\[paste #\\d+ (?:\\+(?<lines>\\d+) lines|(?<chars>\\d+) chars)\\]"
+  },
+  "reservedLeads": ["/", "!"],
+  "reservedLastWordLeads": ["@"],
+  "probe": {
+    "char": "⌁",
+    "status": "provisional",
+    "note": "No live probed send has passed yet. The box layout comes from the saved screens in web/src/fixtures/panes (interlace--*.txt, Interlace 2026.11.2 on Herdr, 2026-11-17) and from the TUI's source. Interlace holds a paste of more than 10 lines or 1000 characters aside and shows a marker in pi's form, `[paste #1 +12 lines]` or `[paste #2 1500 chars]` (apps/interlace/src/editor.rs), which is the collapse pattern; no screen of a marker is saved yet. A typed word that starts with `@` opens the file list, and Enter then takes its selection, so a text whose last word starts with `@` is refused (reservedLastWordLeads); a paste opens no list. Provisional until a live probed send passes; fallback ¤"
+  },
+  "paste": {
+    "bracketed": true
+  },
+  "hooks": {}
+}

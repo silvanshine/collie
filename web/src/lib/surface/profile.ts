@@ -359,6 +359,13 @@ export interface FrameLayout {
    */
   readonly draftLines?: boolean;
   readonly maxDraftRows: number;
+  /**
+   * For a harness whose box grows with the screen (fork addition): the tallest draft as a whole
+   * percentage of the rows read, 1 to 100. The walk then crosses that share of the rows, or
+   * `maxDraftRows` when that is more, so `maxDraftRows` is the bound of a short screen. Interlace's
+   * input takes up to 30% of the screen. Optional: with none, `maxDraftRows` is the only bound.
+   */
+  readonly maxDraftShare?: number;
   /** How many rows above the last non-blank row the bottom edge may sit (the frame module's
    *  search bound, M56 spec 03): the tallest thing the harness draws under a live box. */
   readonly maxTailRows: number;
@@ -777,6 +784,16 @@ export interface Profile {
    * without one keeps the generic line and its command route. Every key must be in `reservedLeads`.
    */
   readonly reservedLeadNotes?: Readonly<Record<string, string>>;
+  /**
+   * The leads that open a list on the word the cursor stands in, where Enter takes the list's
+   * selection instead of sending (Interlace 2026.11.2: a word that starts with `@` opens its file
+   * list). After a write the cursor stands at the end of the text, so a text whose last word starts
+   * with one is refused `reserved_lead` before any key, in every writing mode. A word further in is
+   * free: the list closes when the cursor leaves it. A text the multiplexer pastes (`paste.bracketed`
+   * and a per-line paste) opens no list and is not refused, except an Add: the draft it joins may
+   * have a list open. Optional.
+   */
+  readonly reservedLastWordLeads?: readonly string[];
   readonly probe: {
     readonly char: string;
     readonly status: "verified" | "provisional";
@@ -1347,7 +1364,10 @@ function parseFrame(frameNode: JsonObject): FrameLayout {
     maxTailRows: whole(field(frameNode, "maxTailRows", "idle.frame"), "idle.frame.maxTailRows", 0),
   };
   const maxWidgetRows = frameNode.maxWidgetRows === undefined ? undefined : whole(frameNode.maxWidgetRows, "idle.frame.maxWidgetRows", 1);
-  const withWidgets = maxWidgetRows === undefined ? anchors : { ...anchors, maxWidgetRows };
+  const maxDraftShare = frameNode.maxDraftShare === undefined ? undefined : whole(frameNode.maxDraftShare, "idle.frame.maxDraftShare", 1);
+  if (maxDraftShare !== undefined && maxDraftShare > 100) fail("idle.frame.maxDraftShare", "is a percentage of the rows read: 1 to 100");
+  const withShare = maxDraftShare === undefined ? anchors : { ...anchors, maxDraftShare };
+  const withWidgets = maxWidgetRows === undefined ? withShare : { ...withShare, maxWidgetRows };
   const withIndent = frameNode.draftIndent === undefined ? withWidgets : { ...withWidgets, draftIndent: whole(frameNode.draftIndent, "idle.frame.draftIndent", 1) };
   if (frameNode.draftLines !== undefined && frameNode.draftLines !== true && frameNode.draftLines !== false) fail("idle.frame.draftLines", "must be true or false");
   const withLines = frameNode.draftLines === true ? { ...withIndent, draftLines: true } : withIndent;
@@ -1574,6 +1594,14 @@ export function parseProfile(raw: JsonValue): Profile {
     }
     reservedLeadNotes = notes;
   }
+  let reservedLastWordLeads: readonly string[] | undefined;
+  if (root.reservedLastWordLeads !== undefined) {
+    const lastWordLeads = textList(root.reservedLastWordLeads, "reservedLastWordLeads", 1);
+    lastWordLeads.forEach((lead, i) => {
+      if (lead.length === 0 || /\s/u.test(lead)) fail(`reservedLastWordLeads[${String(i)}]`, "must be a lead with no white space");
+    });
+    reservedLastWordLeads = lastWordLeads;
+  }
   // Read after the leads: each entry is one command word that starts with one of them.
   if (keysNode.commandsRunInTurn !== undefined) {
     const commandsRunInTurn = textList(keysNode.commandsRunInTurn, "keys.commandsRunInTurn", 1);
@@ -1638,7 +1666,8 @@ export function parseProfile(raw: JsonValue): Profile {
 
   const parsedProfile: Profile = { id, identity: agentNames === undefined ? identity : { ...identity, agentNames }, versions, idle: idleBlock, keys, collapse, reservedLeads, probe, hooks };
   const withNotes = reservedLeadNotes === undefined ? parsedProfile : { ...parsedProfile, reservedLeadNotes };
-  const withPaste = paste === undefined ? withNotes : { ...withNotes, paste };
+  const withLastWord = reservedLastWordLeads === undefined ? withNotes : { ...withNotes, reservedLastWordLeads };
+  const withPaste = paste === undefined ? withLastWord : { ...withLastWord, paste };
   const withAsk = ask === undefined ? withPaste : { ...withPaste, ask };
   const withEdges = edges === undefined ? withAsk : { ...withAsk, edges };
   return hold === undefined ? withEdges : { ...withEdges, hold };

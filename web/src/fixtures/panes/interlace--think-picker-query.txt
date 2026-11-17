@@ -1,0 +1,57 @@
+[0m[1m[38;5;6myou: [0mWrite a 500 word essay about tide pools, slowly and carefully.
+[0m[1m[38;5;2massistant: [0m[1mThe World in a Hollow of Rock[0m  
+
+A tide pool begins as a failure of drainage. Somewhere on a rocky shore, water retreats and a hollow in the stone does not empty: a basin a hand's width deep, or a bathtub's, left
+holding the sea at a smaller scale. Nothing about the pool is designed. It is a consequence of geology meeting gravity twice a day, and everything living inside it is there because
+ it can survive the terms.
+
+Those terms are set by the moon. As the moon and sun pull at the ocean, the shoreline is uncovered and covered on a schedule that lags the sky by roughly fifty minutes a day. At ne
+w and full moons the two bodies pull together and the range widens into spring tides; at the quarters they pull at right angles and the range slackens into neap tides. A pool high
+on the shore may be refreshed only at the top of a spring tide, and in between it is a puddle going quietly wrong. A pool low on the shore is replenished twice a day and behaves al
+most like the sea itself.
+
+The difference matters because the water changes. Left in the sun, a shallow pool warms far past the temperature of the surf and evaporates, and its salt concentrates. Rain does th
+e opposite and dilutes it. At night the algae and the animals respire and the oxygen falls while carbon dioxide accumulates, so the water sours and its acidity drifts. Each of thes
+e is a small crisis, and the residents have small, exact answers. Limpets clamp down and, when the water returns, graze their way back to the same scar in the rock. Anemones fold i
+nto themselves. Barnacles simply close. Others, like the ochre sea star, cannot close, and are confined by their own tolerance to the lower shore.
+
+That confinement is the pool's real architecture. Robert Paine, working on the Washington coast in the 1960s, removed sea stars from a stretch of rock and watched mussels take the
+space and hold it, crowding out nearly everything else. Predation, not preference, drew the line. What looks like a peaceful arrangement is a standing argument settled by appetite.
+
+So the pool rewards a slow look: not a collection of curiosities but a small economy under stress, keeping its accounts by the tide. Wade in, and put the stones back as you found t
+hem.
+[0m[1m[38;5;6myou: [0mthen say done
+[0m[1m[38;5;2massistant: [0mDone.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                                                                                                                                    
+                                                                                                                                                 
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+[0m[7m    high                                                                                                                                                                            [0m
+    xhigh                                                                                                                                                                           
+thinking level: hi  1/2                                                                                                                                                             
+>                                                                                                                                                                                  
+[0m[7m[38;5;2m idle · /tmp/collie-interlace-lab                                                                                                                                                   [0m
+[0m[2m ↑1.5k ↓1.1k R17.4k · ctx 10.0k                                                                                                                   (morph) morph-dsv41flash • medium [0m

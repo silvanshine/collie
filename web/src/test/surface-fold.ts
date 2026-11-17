@@ -140,6 +140,11 @@ const SPEC14: readonly ProfileCase[] = [
     idleMin: 2,
     quote: ["Here is the dialog you asked about:", "  Run this command?", "  → Run (once) (y)", "    Skip & tell the agent what to do instead (esc or n)", "", "That is all it shows."],
   },
+  {
+    id: "interlace",
+    idleMin: 2,
+    quote: ["Here is the dialog you asked about:", "  interlace: the model asks to retire the workspace scratch-test.", "  Its directory is removed. Retire it? [y/N]", "", "That is all it shows."],
+  },
 ];
 
 /** The spec 14 cases with these ids, in the order given. An id that has no case throws, so a part file cannot silently drop a profile. */

@@ -829,6 +829,7 @@ on the last rows stops it: Collie types nothing there, and the phone offers Type
 | Muse | Not measured | Enter | Yes | 1.4.7 |
 | Hermes (classic CLI) | Interrupts the turn by default; Hermes's `/busy` can make it queue or steer | Enter | Yes | 0.22.2 |
 | Cursor CLI (`cursor-agent`) | Queues the message | Enter | Yes | 2026.10.16 |
+| Interlace (fork addition) | Queues the message; steers it in Interlace's steer mode, where Collie types nothing | Enter | Yes | Screens of 2026.11.2 |
 | Kiro (`kiro-cli`) | Steers the turn; Collie holds a send until the turn ends | Enter | Short texts | 2.32.0 |
 
 A command, such as `/model`, always goes with Enter. A probed send types one extra character first.
@@ -907,6 +908,20 @@ Collie checks that the character lands in the box, then removes it.
   The box shows at most six rows and scrolls a longer draft. Collie cannot read a taller message back, so it leaves the typed text in the box and does not press Enter.
   Its dialogs (a command approval, a question, the folder trust prompt) replace the box, so the screen reads as unreadable.
   Live probed sends passed on 2026.10.14 and 2026.10.16.
+
+- **Interlace** (a fork addition) draws no rule around its input. The screen ends in a notice row, the `>` input rows, a state row and a usage row.
+  The notice row is blank while Interlace has nothing to say, and Collie reads that blank row as the top of the box.
+  A notice, an approval's question, or the query of the model picker, the thinking picker or the search stands on that row. Collie then finds no box and types nothing.
+  A notice passes after 5 to 20 seconds. The notice after Ctrl+C (`cancelling the turn; Ctrl-C again quits`) stays until the next line is sent in the pane itself.
+  The state row must say `idle` or `working`. Collie types nothing while it says `attaching` or `waiting on an approval`.
+  Enter during a turn queues the message as a `next:` row over the notice row.
+  In Interlace's steer mode (Ctrl+S on an empty input) Enter steers the turn, so Collie types nothing while the state row says `steer`.
+  A typed word that starts with `@` opens Interlace's file list while the cursor stands in it, and Enter then takes the selected file instead of sending.
+  Collie does not see that list, so it refuses a text whose last word starts with `@` before it types anything. An `@` word further in is fine: the list closes when the cursor leaves the word. On a multiplexer that pastes the text (tmux), no list opens.
+  An Add is read together with the draft it joins. Typed, it is refused when the draft's last word and the text end in an `@` word. Pasted, it is refused only when the text is one line and the draft's own last word starts with `@` too, because a list may be open there and a paste changes an open list instead of closing it.
+  Interlace holds a paste of more than 10 lines or 1000 characters aside and shows a marker such as `[paste #1 +12 lines]`.
+  The input grows to 30% of the pane and then scrolls. Collie reads a box up to that share of the pane, whatever the pane's height. Collie cannot read a taller message back, so it leaves the typed text in the box and does not press Enter.
+  The layout is read from screens of Interlace 2026.11.2, saved on 2026-11-17, and from Interlace's source.
 
 - **Kiro** draws its box under a rule: a status bar, the folder, a blank row and a `›` prompt row.
   Collie types only when that whole frame is on screen.

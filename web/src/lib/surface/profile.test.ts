@@ -387,9 +387,25 @@ describe("the codex profile (M56 spec 13)", () => {
     }
   });
 
+  it("reservedLastWordLeads parses; interlace ships it and nobody else does", () => {
+    expect(parseProfile(change(rawCodex(), ["reservedLastWordLeads"], ["@"])).reservedLastWordLeads).toEqual(["@"]);
+    expect(parseProfile(rawCodex()).reservedLastWordLeads).toBeUndefined();
+    for (const [id, profile] of loadProfiles()) expect(profile.reservedLastWordLeads, id).toEqual(id === "interlace" ? ["@"] : undefined);
+  });
+
+  it("idle.frame.maxDraftShare parses; interlace ships it and nobody else does", () => {
+    expect(parseProfile(change(rawCodex(), ["idle", "frame", "maxDraftShare"], 100)).idle.frame.maxDraftShare).toBe(100);
+    expect(parseProfile(rawCodex()).idle.frame.maxDraftShare).toBeUndefined();
+    for (const [id, profile] of loadProfiles()) expect(profile.idle.frame.maxDraftShare, id).toBe(id === "interlace" ? 30 : undefined);
+  });
+
   const cases: [string, (string | number)[], JsonValue | undefined, string][] = [
+    ["codex: a draft share of nothing", ["idle", "frame", "maxDraftShare"], 0, "idle.frame.maxDraftShare"],
+    ["codex: a draft share over the whole screen", ["idle", "frame", "maxDraftShare"], 101, "idle.frame.maxDraftShare"],
     ["codex: Escape as the stroke clear key", ["keys", "clearAll"], { key: "Escape" }, "keys.clearAll.key"],
     ["codex: refuseLiteral that is not a boolean", ["collapse", "refuseLiteral"], "yes", "collapse.refuseLiteral"],
+    ["codex: an empty list of last-word leads", ["reservedLastWordLeads"], [], "reservedLastWordLeads"],
+    ["codex: a last-word lead with a space in it", ["reservedLastWordLeads"], ["@ "], "reservedLastWordLeads[0]"],
     ["codex: a stroke clear key with no key", ["keys", "clearAll"], {}, "keys.clearAll.key"],
     ["codex: a lead note for a lead that is not reserved", ["reservedLeadNotes"], { "->": "A note." }, "reservedLeadNotes"],
     ["codex: an empty lead note", ["reservedLeadNotes"], { "!": " " }, "reservedLeadNotes.!"],
@@ -682,6 +698,40 @@ const SPEC14_CASES: readonly Spec14Case[] = [
     collapse: { text: "[Pasted text #1 +301 lines]", group: "lines", value: "301" },
     submit: ["Enter"],
     probeStatus: "verified",
+    enterWhileRunning: "queues",
+    rangeStatus: "provisional",
+  },
+  {
+    id: "interlace",
+    binary: "interlace",
+    versionOutput: "interlace 2026.11.2 (dev bc3eb15d380d release-fast)\n",
+    version: "2026.11.2",
+    above: "2026.11.3",
+    // No leading `@`: the file list closes when the cursor leaves the word (reservedLastWordLeads).
+    reservedLeads: ["/", "!"],
+    takes: [
+      // The notice row over the prompt, blank while nothing is said, is the top edge.
+      { anchor: "top", row: "" },
+      { anchor: "prompt", row: ">" },
+      { anchor: "prompt", row: "> hello there", draft: "hello there" },
+      { anchor: "bottom", row: " idle · /tmp/collie-interlace-lab" },
+      { anchor: "bottom", row: " ⠋ working 12s · /tmp/collie-interlace-lab" },
+      { anchor: "bottom", row: " idle · /tmp/collie-interlace-lab · 12 rows up, Esc goes to the end" },
+    ],
+    refuses: [
+      { anchor: "top", row: "cancelling the turn; Ctrl-C again quits" },
+      { anchor: "prompt", row: "  a wrapped row" },
+      { anchor: "prompt", row: ">hello" },
+      // The state row of a session that is not attached yet, of one that waits on an approval, and of
+      // the steer mode, where Enter steers the running turn: none is the bottom edge.
+      { anchor: "bottom", row: " attaching · /tmp/collie-interlace-lab" },
+      { anchor: "bottom", row: " waiting on an approval · /tmp/collie-interlace-lab" },
+      { anchor: "bottom", row: " idle · steer · /tmp/collie-interlace-lab" },
+      { anchor: "bottom", row: " ⠋ working 12s · steer · /tmp/collie-interlace-lab" },
+    ],
+    collapse: { text: "[paste #1 +12 lines]", group: "lines", value: "12" },
+    submit: ["Enter"],
+    probeStatus: "provisional",
     enterWhileRunning: "queues",
     rangeStatus: "provisional",
   },

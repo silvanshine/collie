@@ -17,6 +17,8 @@ need a rule to be read right.
 
 - `keys.clearAll` is the one key that empties a box where `keys.clear` (a Backspace per character) cannot, such as OMP's Ctrl+C on a draft that starts with `->` or `=>`. A clear presses it at most once per request, only after a fresh read showed a draft and the clear key left the box unchanged, and never on an empty box: the same key may quit the program there. Never Escape.
 - `reservedLeads` lists the leads a plain send may not start with. `reservedLeadNotes` gives a lead that has no command route either (OMP's `->` and `=>`) its refusal sentence; such a lead is refused in every writing mode.
+- `reservedLastWordLeads` lists the leads that open a list on the word the cursor stands in, where Enter takes the list's selection (Interlace's `@`). A text whose last word starts with one is refused `reserved_lead` before any key, in every writing mode. Where the multiplexer pastes the text, no list opens. An Add is read again with the draft it joins, once the draft is proven: typed, it is refused when the draft and the text together end in such a word; pasted, only when the text is one line and the draft's own last word starts with the lead too, since a paste changes an open list instead of closing it, and a newline key closes it.
+- `idle.frame.maxDraftShare` (fork addition) is the tallest draft as a whole percentage of the rows read, 1 to 100, for a harness whose box grows with the screen (Interlace's 30%). The walk crosses that share of the rows, or `maxDraftRows` when that is more.
 - `collapse.refuseLiteral` says the harness expands a typed chip label (`📄 #1`) into a body it still holds. A send whose text matches `collapse.pattern` is refused `reserved_lead` before any key.
 
 ### Keys that differ by platform

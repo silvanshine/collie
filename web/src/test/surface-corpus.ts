@@ -41,6 +41,12 @@ export const CUES_BLIND = new Map<string, string>([
     "kiro--v3-replace-edit-w120.txt",
     "Kiro's Modify request editor is a `›` feedback row between two rules with only `esc to close` below it, so the cues see an input box, not a dialog",
   ],
+  ...["interlace--find.txt", "interlace--model-picker-query.txt", "interlace--think-picker.txt", "interlace--think-picker-query.txt"].map(
+    (name): [string, string] => [
+      name,
+      "Interlace's pickers and its search type their query in the notice row over the input and draw no key hint, so the cues see no dialog; the row is the box's blank top edge, so a query there leaves no frame and the pane never reads free",
+    ],
+  ),
 ]);
 
 export type FixtureState = "idle" | "draft" | "running" | "popup" | "dialog" | "screen" | "other";

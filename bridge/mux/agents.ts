@@ -17,8 +17,9 @@
  * reader. The Send Protocol looks the profile up by the pane's agent name, so the name must pass the
  * rule, but nothing renders or reads history for the pane. `agents.test.ts` checks both halves.
  * `cursor` is the Cursor CLI (binary `cursor-agent`), under the name Herdr gives its integration.
+ * `interlace` is the Interlace TUI, under the name it reports to Herdr itself (fork addition).
  */
-export const MUX_PROFILE_ONLY_AGENT_NAMES: readonly string[] = ["cursor"];
+export const MUX_PROFILE_ONLY_AGENT_NAMES: readonly string[] = ["cursor", "interlace"];
 
 /** Every agent name a harness reader or an input profile of Collie's answers to, sorted. */
 export const MUX_AGENT_NAMES: readonly string[] = [
@@ -30,6 +31,7 @@ export const MUX_AGENT_NAMES: readonly string[] = [
   "dsh-tui",
   "grok",
   "hermes",
+  "interlace",
   "kiro",
   "muse",
   "omp",

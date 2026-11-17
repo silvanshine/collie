@@ -1,0 +1,57 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0m[7m  /new                  [0m[2m[7mstart a new conversation on this store; the old one stays in it[0m[7m                                                                                             [0m
+  /model, /model ID     [0m[2mshow the conversation's model[0m
+  /think, /think LEVEL  [0m[2mshow how much the model thinks[0m
+  /usage                [0m[2mthe tokens and cost of this conversation's model calls[0m
+  /compact [NOTES]      [0m[2msummarise older turns to free context, guided by NOTES[0m
+  /rewind [N] [files]   [0m[2mtake the last N turns (1 if not given) back out of the model's context;[0m
+  /fork [N]             [0m[2mcopy this session into a new one that goes on separately, without its[0m
+  /help                 [0m[2mthis list[0m
+[0m[2m  + 150 skills, shown as you type more of a name[0m
+                                                                                                                                                                                    
+> /                                                                                                                                                                                
+[0m[7m[38;5;2m idle · /tmp/collie-interlace-lab                                                                                                                                                   [0m
+[0m[2m ↑0 ↓0 R0                                                                                                                                         (morph) morph-dsv41flash • medium [0m
