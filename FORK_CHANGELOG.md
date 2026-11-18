@@ -34,6 +34,64 @@ repositories, outside the original project's fork network.
   stamp's `fork` field, which `collie version` prints in parentheses and the PWA footer shows after
   the commit. The crew wire version, the stamp's `id` and the release/dev channel do not change.
 
+## fork/2026.11.3 (2026-11-18)
+
+Fourth snapshot, on upstream `v1.25.5` (`5c45b3df`). Its tree differs from the checked feature
+commit `e7f1fd779d25` only in this ledger, so the checks below apply to it.
+
+### Fork modifications
+
+- Name the fork snapshot in the build stamp (unchanged).
+- Ignore local Pluram capture state (unchanged).
+- The bridge never checks upstream releases (unchanged).
+- **New:** an input profile for Interlace, the fork owner's agent TUI
+  (`web/src/lib/surface/profiles/interlace.json`). Herdr reports its panes as `interlace`; without
+  a profile a walky talky message was typed blind. The box has blank edges: the notice row over the
+  `>` prompt is the top edge while it is blank, and the state row is the bottom edge while it says
+  `idle` or `working`. A notice, an approval's question, or a picker's or the search's query leaves
+  no frame, so nothing is typed; nothing is typed in the steer mode either. Enter in a turn queues.
+  Seventeen screens of Interlace 2026.11.2 back it (`web/src/fixtures/panes/interlace--*.txt`).
+  The range and the probe stay provisional in the profile.
+- **New:** the profile field `reservedLastWordLeads` (`web/src/lib/surface/profile.ts`,
+  `bridge/surface/protocol.ts`). A text whose last word starts with a listed lead is refused
+  `reserved_lead` before any key, in every writing mode. Interlace lists `@`: a typed word that
+  starts with it opens the file list, and Enter then takes the list's selection. A leading `@` is
+  not reserved, because the list closes when the cursor leaves the word. Where the multiplexer
+  pastes the text no list opens. An Add is read again with the proven draft it joins: typed, it is
+  refused when the draft and the text together end in such a word; pasted, only when the text is
+  one line and the draft's own last word starts with the lead too. No other profile sets the field.
+- **New:** the profile field `idle.frame.maxDraftShare` (`web/src/lib/surface/profile.ts`,
+  `web/src/lib/surface/frame.ts`, `web/src/lib/surface/fold.ts`): the tallest draft as a whole
+  percentage of the rows read. The walk up a box crosses that share of the rows, or `maxDraftRows`
+  when that is more. Interlace sets 30, its input's own limit. No other profile sets the field.
+- `interlace` joins the profile-only agent names (`bridge/mux/agents.ts`) and the names the New
+  sheet does not start (`bridge/harness-launch.ts`); the doctor's golden gains its sends row.
+
+Known limits, recorded from the review:
+
+- The screen read drops a space at a draft's end, so an Add is refused when the draft's last word
+  starts with `@` and the text does not clearly leave it, even where the list had closed.
+- A message that itself holds marker-shaped text (`[paste #1 +12 lines]`) shares the engine's
+  collapse path, as on every profile with a collapse pattern.
+
+Checks on the feature commit:
+- Narrow: `bun test bridge/surface` passed 1431, web `vitest run src/lib/surface` passed 3635,
+  both typechecks passed, and lint exited 0.
+- Broad: `scripts/collie-ctl.sh build` passed in the deploy workspace. Root `bun test ./bridge`
+  passed 9623 and failed 2 timing tests (`launchers-durable.test.ts`, `stt/local-cli.test.ts`)
+  under a load average near 85 from another build; both files pass alone (57/57). `./cli`,
+  `./scripts` and `./herdr-app-mod` passed (2776, 722, 21). The shell scripts were run one by one:
+  all exit 0 except `scripts/collie-cli.test.sh`, which fails the known "bun not found" assertion
+  that plain `v1.25.5` fails here too. Web `bun run test` passed 52,110 and failed 1
+  (`router.test.tsx`), which passes alone (3/3). `bun run test:crew` was not run: the fork does
+  not touch the crew harness.
+- Live: the bridge at `1.25.5-dev+e7f1fd779d` typed three walky talky messages into an Interlace
+  2026.11.2 pane on Herdr, one at an idle box and two queued in a turn, and each was read there.
+  A fourth, sent while a notice stood on the notice row, was not typed and waits in the inbox.
+  The `@` refusal was not exercised live: an agent's message is typed as its header line.
+- Review: GPT-6.2 Sol, nine rounds on the feature commit. The last found no new defect and still
+  said FIX for the two known limits above, which are declined.
+
 ## fork/2026.11.2 (2026-11-03)
 
 Third snapshot, on upstream `v1.25.5` (`5c45b3df`). Its tree differs from the checked sync tip
